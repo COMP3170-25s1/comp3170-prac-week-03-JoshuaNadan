@@ -7,7 +7,7 @@ import static org.lwjgl.opengl.GL11.GL_UNSIGNED_INT;
 import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
 import static org.lwjgl.opengl.GL11.glDrawElements;
 import static org.lwjgl.opengl.GL15.glBindBuffer;
-import static org.lwjgl.opengl.GL11.*; 
+import static org.lwjgl.opengl.GL11.*;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -34,45 +34,27 @@ public class Scene {
     public Scene() {
         shader = ShaderLibrary.instance.compileShader(VERTEX_SHADER, FRAGMENT_SHADER);
 
-        // @formatter:off
-        //          (0,1)
-        //           /|\
-        //          / | \
-        //         /  |  \
-        //        / (0,0) \
-        //       /   / \   \
-        //      /  /     \  \
-        //     / /         \ \        
-        //    //             \\
-        //(-1,-1)           (1,-1)
-
-        vertices = new Vector4f[] {
-            new Vector4f( 0, 0, 0, 1),
-            new Vector4f( 0, 1, 0, 1),
-            new Vector4f(-1,-1, 0, 1),
-            new Vector4f( 1,-1, 0, 1),
+        // Define vertices and colors
+        vertices = new Vector4f[]{
+            new Vector4f(0, 0, 0, 1),
+            new Vector4f(0, 1, 0, 1),
+            new Vector4f(-1, -1, 0, 1),
+            new Vector4f(1, -1, 0, 1),
         };
-        // @formatter:on
         vertexBuffer = GLBuffers.createBuffer(vertices);
 
-        // @formatter:off
-        colours = new Vector3f[] {
-            new Vector3f(1,0,1),    // MAGENTA
-            new Vector3f(1,0,1),    // MAGENTA
-            new Vector3f(1,0,0),    // RED
-            new Vector3f(0,0,1),    // BLUE
+        colours = new Vector3f[]{
+            new Vector3f(1, 0, 1),    // MAGENTA
+            new Vector3f(1, 0, 1),    // MAGENTA
+            new Vector3f(1, 0, 0),    // RED
+            new Vector3f(0, 0, 1),    // BLUE
         };
-        // @formatter:on
-
         colourBuffer = GLBuffers.createBuffer(colours);
 
-        // @formatter:off
-        indices = new int[] {  
+        indices = new int[]{
             0, 1, 2, // left triangle
             0, 1, 3, // right triangle
         };
-        // @formatter:on
-
         indexBuffer = GLBuffers.createIndexBuffer(indices);
     }
 
@@ -89,15 +71,26 @@ public class Scene {
         Matrix4f rotation = new Matrix4f();
         Matrix4f scaling = new Matrix4f();
 
-        // Calculate the new position along the circle using trigonometry
-        float x = radius * (float) Math.cos(time);  // X position on the circle
-        float y = radius * (float) Math.sin(time);  // Y position on the circle
+        // Calculate the current position along the circle using trigonometry
+        float x = radius * (float) Math.cos(time);   // Current X position
+        float y = radius * (float) Math.sin(time);   // Current Y position
+
+        // Calculate the next position to determine the direction of movement
+        float nextX = radius * (float) Math.cos(time + 0.01f);   // Slightly ahead X
+        float nextY = radius * (float) Math.sin(time + 0.01f);   // Slightly ahead Y
+
+        // Compute the direction vector between the current position and the next
+        float dx = nextX - x;
+        float dy = nextY - y;
+
+        // Calculate the angle the ship should face using atan2
+        float facingAngle = (float) Math.atan2(dy, dx);
 
         // Set the translation matrix to move the ship in a circular path
         translationMatrix(x, y, translation);
 
-        // You can still rotate the ship if needed, here we're just using rotationMatrix with an angle of time
-        rotationMatrix(time, rotation);
+        // Rotate the ship to face the correct direction based on the movement angle
+        rotationMatrix(facingAngle, rotation);
 
         // Apply scaling
         scaleMatrix(scale, scale, scaling);
