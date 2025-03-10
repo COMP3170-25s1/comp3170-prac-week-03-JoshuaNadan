@@ -23,7 +23,7 @@ public class Week3 implements IWindowListener {
     private int height = 800;
     private Scene scene;
 
-    private float time = 0.0f;
+    private float time = 0.0f;  // Time variable for animation
 
     public Week3() throws OpenGLException  {
         window = new Window("Week 3 prac", width, height, this);
@@ -43,14 +43,12 @@ public class Week3 implements IWindowListener {
         glClear(GL_COLOR_BUFFER_BIT);  
 
         // Update the time and calculate the angle for rotation
-        time += 0.01f;  // Change this value for different speeds
-        float angle = time;
+        time += 0.01f;  // Adjust this value for different speeds
+        float radius = 0.5f;  // Adjust this for the size of the circular path
+        float scale = 0.2f;   // Adjust the scale of the ship
 
-        // Set the scale (to make the plane smaller)
-        float scale = 0.5f;
-
-        // Draw the plane with the updated transformation
-        scene.draw(angle, scale);
+        // Draw the ship in a circular path
+        scene.draw(time, radius, scale);
     }
 
     @Override

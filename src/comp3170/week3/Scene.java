@@ -76,7 +76,7 @@ public class Scene {
         indexBuffer = GLBuffers.createIndexBuffer(indices);
     }
 
-    public void draw(float angle, float scale) {
+    public void draw(float time, float radius, float scale) {
         shader.enable();
 
         // Set the attributes
@@ -89,9 +89,17 @@ public class Scene {
         Matrix4f rotation = new Matrix4f();
         Matrix4f scaling = new Matrix4f();
 
-        // Set the translation, rotation, and scale matrices
-        translationMatrix(0.0f, 0.0f, translation);
-        rotationMatrix(angle, rotation);
+        // Calculate the new position along the circle using trigonometry
+        float x = radius * (float) Math.cos(time);  // X position on the circle
+        float y = radius * (float) Math.sin(time);  // Y position on the circle
+
+        // Set the translation matrix to move the ship in a circular path
+        translationMatrix(x, y, translation);
+
+        // You can still rotate the ship if needed, here we're just using rotationMatrix with an angle of time
+        rotationMatrix(time, rotation);
+
+        // Apply scaling
         scaleMatrix(scale, scale, scaling);
 
         // Combine the transformations: T * R * S
