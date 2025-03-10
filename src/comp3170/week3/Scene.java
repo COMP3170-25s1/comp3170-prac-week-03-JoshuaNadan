@@ -34,7 +34,7 @@ public class Scene {
     private float currentFacingAngle = 0.0f; // Store the current facing angle of the ship
 
     // Speed at which the ship rotates (adjust this to change how quickly it turns)
-    private float rotationSpeed = 0.05f; // Smaller value means slower turning
+    private float rotationSpeed = 0.03f; // Smaller value means slower turning
 
     // Track movement direction (0 = up, 1 = right, 2 = down, 3 = left)
     private int currentDirection = 1; // Start facing right by default
@@ -96,10 +96,10 @@ public class Scene {
             // Moving horizontally
             if (dx > 0) {
                 currentDirection = 1; // Facing right
-                currentFacingAngle = 0; // No rotation needed for right
+                currentFacingAngle = (float) Math.PI; // 180 degrees for right
             } else {
                 currentDirection = 3; // Facing left
-                currentFacingAngle = (float) Math.PI; // Rotate 180 degrees for left
+                currentFacingAngle = 0; // 0 degrees for left
             }
         } else {
             // Moving vertically
@@ -110,6 +110,15 @@ public class Scene {
                 currentDirection = 2; // Facing down
                 currentFacingAngle = (float) (-Math.PI / 2); // Rotate -90 degrees for down
             }
+        }
+
+        // Correct the facing angle for the left/right directions (to face 180 degrees)
+        if (currentDirection == 1) {
+            // Facing right: 180 degrees rotation
+            currentFacingAngle = (float) Math.PI;
+        } else if (currentDirection == 3) {
+            // Facing left: 180 degrees rotation
+            currentFacingAngle = 0;
         }
 
         // Set the translation matrix to move the ship in a circular path
@@ -161,7 +170,7 @@ public class Scene {
         return dest;
     }
 
-    // Method to apply 270-degree rotation to ship vertices so the top faces right, it originally faced the other direction
+    // Method to apply 270-degree rotation to ship vertices so the top faces right
     private void rotateVerticesToFaceRight(Vector4f[] vertices) {
         Matrix4f rotationMatrix = new Matrix4f();
         rotationMatrix.identity();

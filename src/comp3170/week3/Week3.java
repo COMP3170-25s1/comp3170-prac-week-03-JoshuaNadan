@@ -43,7 +43,7 @@ public class Week3 implements IWindowListener {
         glClear(GL_COLOR_BUFFER_BIT);  
 
         // Update the time and calculate the angle for rotation
-        time += 0.01f;  // Adjust this value for different speeds
+        time += 0.015f;  // Adjust this value for different speeds
         float radius = 0.5f;  // Adjust this for the size of the circular path
         float scale = 0.2f;   // Adjust the scale of the ship
 
