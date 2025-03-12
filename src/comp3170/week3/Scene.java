@@ -31,27 +31,21 @@ public class Scene {
 
     private Shader shader;
 
-    private float currentFacingAngle = 0.0f; // Store the current facing angle of the ship
+    private float currentFacingAngle = 0.0f; // Current facing angle of the ship
+    private float targetFacingAngle = 0.0f;  // Target facing angle after the turn
 
-    // Speed at which the ship rotates (adjust this to change how quickly it turns)
-    private float rotationSpeed = 0.03f; // Smaller value means slower turning
-
-    // Track movement direction (0 = up, 1 = right, 2 = down, 3 = left)
-    private int currentDirection = 1; // Start facing right by default
+    private float rotationSpeed = 0.02f;  // Rotation speed for smooth turning
 
     public Scene() {
         shader = ShaderLibrary.instance.compileShader(VERTEX_SHADER, FRAGMENT_SHADER);
 
         // Define vertices and colors
         vertices = new Vector4f[] {
-            new Vector4f(0, 0, 0, 1), // Center of the ship
-            new Vector4f(0, 1, 0, 1), // Top of the ship
-            new Vector4f(-1, -1, 0, 1), // Left bottom corner
-            new Vector4f(1, -1, 0, 1), // Right bottom corner
+            new Vector4f(0, 0, 0, 1),    // Center of the ship
+            new Vector4f(0, 1, 0, 1),    // Top of the ship
+            new Vector4f(-1, -1, 0, 1),  // Left bottom corner
+            new Vector4f(1, -1, 0, 1),   // Right bottom corner
         };
-
-        // Apply a 270-degree rotation to the vertices so the top faces right
-        rotateVerticesToFaceRight(vertices);
 
         vertexBuffer = GLBuffers.createBuffer(vertices);
 
@@ -87,44 +81,40 @@ public class Scene {
         float x = radius * (float) Math.cos(time);   // Current X position
         float y = radius * (float) Math.sin(time);   // Current Y position
 
-        // Determine movement direction (up, down, left, right)
-        float dx = radius * (float) Math.cos(time + 0.01f) - x;   // Small step in X direction
-        float dy = radius * (float) Math.sin(time + 0.01f) - y;   // Small step in Y direction
+        // Moving direction: horizontal (right/left) or vertical (up/down)
+        float dx = radius * (float) Math.cos(time + 1.0f) - x;
+        float dy = radius * (float) Math.sin(time + 1.0f) - y;
 
-        // Calculate the direction based on dx, dy (e.g., left, right, up, down)
+        // Calculate the current direction vector
+        float currentDirection = (float) Math.atan2(dy, dx);
+
+        // Adjust the target facing angle based on movement
         if (Math.abs(dx) > Math.abs(dy)) {
-            // Moving horizontally
+            // Horizontal movement
             if (dx > 0) {
-                currentDirection = 1; // Facing right
-                currentFacingAngle = (float) Math.PI; // 180 degrees for right
+                targetFacingAngle = 1.5708f;  // 90 degrees for moving to the right
             } else {
-                currentDirection = 3; // Facing left
-                currentFacingAngle = 0; // 0 degrees for left
+                targetFacingAngle = -1.5708f;  // -90 degrees for moving to the left
             }
         } else {
-            // Moving vertically
+            // Vertical movement
             if (dy > 0) {
-                currentDirection = 0; // Facing up
-                currentFacingAngle = (float) (Math.PI / 2); // Rotate 90 degrees for up
+                targetFacingAngle = 0.0f;  // 0 degrees for moving upwards
             } else {
-                currentDirection = 2; // Facing down
-                currentFacingAngle = (float) (-Math.PI / 2); // Rotate -90 degrees for down
+                targetFacingAngle = 3.1416f;  // 180 degrees for moving downwards
             }
         }
 
-        // Correct the facing angle for the left/right directions (to face 180 degrees)
-        if (currentDirection == 1) {
-            // Facing right: 180 degrees rotation
-            currentFacingAngle = (float) Math.PI;
-        } else if (currentDirection == 3) {
-            // Facing left: 180 degrees rotation
-            currentFacingAngle = 0;
-        }
+        // Normalize the targetFacingAngle to range [-π, π]
+        targetFacingAngle = normalizeAngle(targetFacingAngle);
+
+        // Gradually rotate the ship in the direction of the target facing angle
+        currentFacingAngle = smoothAngleLerp(currentFacingAngle, targetFacingAngle, rotationSpeed);
 
         // Set the translation matrix to move the ship in a circular path
         translationMatrix(x, y, translation);
 
-        // Rotate the ship to face the correct direction based on the current facing angle
+        // Apply rotation based on the current facing angle
         rotationMatrix(currentFacingAngle, rotation);
 
         // Apply scaling
@@ -142,6 +132,40 @@ public class Scene {
         glDrawElements(GL_TRIANGLES, indices.length, GL_UNSIGNED_INT, 0);
     }
 
+    // Normalize angle to keep it between -π and π
+    private float normalizeAngle(float angle) {
+        while (angle > Math.PI) {
+            angle -= 2 * Math.PI;
+        }
+        while (angle < -Math.PI) {
+            angle += 2 * Math.PI;
+        }
+        return angle;
+    }
+
+    // Smooth interpolation with linear interpolation (no easing) to make the rotation smoother
+    private float smoothAngleLerp(float currentAngle, float targetAngle, float rotationSpeed) {
+        currentAngle = normalizeAngle(currentAngle);
+        targetAngle = normalizeAngle(targetAngle);
+
+        // Calculate the difference in angles
+        float angleDifference = targetAngle - currentAngle;
+
+        // Ensure the ship always turns in the shortest direction (wrap around [-π, π])
+        if (angleDifference > Math.PI) {
+            angleDifference -= 2 * Math.PI;
+        } else if (angleDifference < -Math.PI) {
+            angleDifference += 2 * Math.PI;
+        }
+
+        // Apply linear interpolation (no easing)
+        float lerpFactor = rotationSpeed;
+
+        // Smoothly interpolate directly towards the target angle
+        return currentAngle + angleDifference * lerpFactor;
+    }
+
+    // Method to apply a translation matrix for positioning
     public static Matrix4f translationMatrix(float tx, float ty, Matrix4f dest) {
         dest.identity();
         dest.m30(tx);
@@ -149,44 +173,24 @@ public class Scene {
         return dest;
     }
 
+    // Method to apply a rotation matrix based on angle
     public static Matrix4f rotationMatrix(float angle, Matrix4f dest) {
         dest.identity();
-
         float cos = (float) Math.cos(angle);
         float sin = (float) Math.sin(angle);
-
         dest.m00(cos);
         dest.m01(-sin);
         dest.m10(sin);
         dest.m11(cos);
-
         return dest;
     }
 
+    // Method to apply scaling matrix
     public static Matrix4f scaleMatrix(float sx, float sy, Matrix4f dest) {
         dest.identity();
         dest.m00(sx);
         dest.m11(sy);
         return dest;
     }
-
-    // Method to apply 270-degree rotation to ship vertices so the top faces right
-    private void rotateVerticesToFaceRight(Vector4f[] vertices) {
-        Matrix4f rotationMatrix = new Matrix4f();
-        rotationMatrix.identity();
-
-        // 270-degree rotation matrix (Cos(270) = 0, Sin(270) = -1)
-        float cos = (float) Math.cos(3 * Math.PI / 2); // Cos(270 degrees) = 0
-        float sin = (float) Math.sin(3 * Math.PI / 2); // Sin(270 degrees) = -1
-
-        rotationMatrix.m00(cos);  // x' = x*cos - y*sin
-        rotationMatrix.m01(-sin);
-        rotationMatrix.m10(sin);
-        rotationMatrix.m11(cos);  // y' = x*sin + y*cos
-
-        // Apply the 270-degree rotation matrix to each vertex
-        for (int i = 0; i < vertices.length; i++) {
-            vertices[i] = rotationMatrix.transform(vertices[i]);
-        }
-    }
 }
+
