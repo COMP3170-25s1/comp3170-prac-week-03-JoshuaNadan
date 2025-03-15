@@ -1,13 +1,7 @@
 package comp3170.week3;
 
-import static org.lwjgl.opengl.GL11.GL_FILL;
-import static org.lwjgl.opengl.GL11.GL_FRONT_AND_BACK;
-import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
-import static org.lwjgl.opengl.GL11.GL_UNSIGNED_INT;
-import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
-import static org.lwjgl.opengl.GL11.glDrawElements;
-import static org.lwjgl.opengl.GL15.glBindBuffer;
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL15.*;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -31,10 +25,9 @@ public class Scene {
 
     private Shader shader;
 
-    private float currentFacingAngle = 0.0f; // Current facing angle of the ship
-    private float targetFacingAngle = 0.0f;  // Target facing angle after the turn
-
-    private float rotationSpeed = 0.02f;  // Rotation speed for smooth turning
+    // Start by facing right (0 radians or 0 degrees)
+    private float currentFacingAngle = 0.0f; 
+    private float rotationSpeed = 0.01f;  // Control how fast the object rotates right (clockwise)
 
     public Scene() {
         shader = ShaderLibrary.instance.compileShader(VERTEX_SHADER, FRAGMENT_SHADER);
@@ -81,40 +74,11 @@ public class Scene {
         float x = radius * (float) Math.cos(time);   // Current X position
         float y = radius * (float) Math.sin(time);   // Current Y position
 
-        // Moving direction: horizontal (right/left) or vertical (up/down)
-        float dx = radius * (float) Math.cos(time + 1.0f) - x;
-        float dy = radius * (float) Math.sin(time + 1.0f) - y;
-
-        // Calculate the current direction vector
-        float currentDirection = (float) Math.atan2(dy, dx);
-
-        // Adjust the target facing angle based on movement
-        if (Math.abs(dx) > Math.abs(dy)) {
-            // Horizontal movement
-            if (dx > 0) {
-                targetFacingAngle = 1.5708f;  // 90 degrees for moving to the right
-            } else {
-                targetFacingAngle = -1.5708f;  // -90 degrees for moving to the left
-            }
-        } else {
-            // Vertical movement
-            if (dy > 0) {
-                targetFacingAngle = 0.0f;  // 0 degrees for moving upwards
-            } else {
-                targetFacingAngle = 3.1416f;  // 180 degrees for moving downwards
-            }
-        }
-
-        // Normalize the targetFacingAngle to range [-π, π]
-        targetFacingAngle = normalizeAngle(targetFacingAngle);
-
-        // Gradually rotate the ship in the direction of the target facing angle
-        currentFacingAngle = smoothAngleLerp(currentFacingAngle, targetFacingAngle, rotationSpeed);
-
         // Set the translation matrix to move the ship in a circular path
         translationMatrix(x, y, translation);
 
-        // Apply rotation based on the current facing angle
+        // Apply continuous right (clockwise) rotation
+        currentFacingAngle -= rotationSpeed;  // Gradually rotate right (clockwise) over time
         rotationMatrix(currentFacingAngle, rotation);
 
         // Apply scaling
@@ -130,39 +94,6 @@ public class Scene {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glDrawElements(GL_TRIANGLES, indices.length, GL_UNSIGNED_INT, 0);
-    }
-
-    // Normalize angle to keep it between -π and π
-    private float normalizeAngle(float angle) {
-        while (angle > Math.PI) {
-            angle -= 2 * Math.PI;
-        }
-        while (angle < -Math.PI) {
-            angle += 2 * Math.PI;
-        }
-        return angle;
-    }
-
-    // Smooth interpolation with linear interpolation (no easing) to make the rotation smoother
-    private float smoothAngleLerp(float currentAngle, float targetAngle, float rotationSpeed) {
-        currentAngle = normalizeAngle(currentAngle);
-        targetAngle = normalizeAngle(targetAngle);
-
-        // Calculate the difference in angles
-        float angleDifference = targetAngle - currentAngle;
-
-        // Ensure the ship always turns in the shortest direction (wrap around [-π, π])
-        if (angleDifference > Math.PI) {
-            angleDifference -= 2 * Math.PI;
-        } else if (angleDifference < -Math.PI) {
-            angleDifference += 2 * Math.PI;
-        }
-
-        // Apply linear interpolation (no easing)
-        float lerpFactor = rotationSpeed;
-
-        // Smoothly interpolate directly towards the target angle
-        return currentAngle + angleDifference * lerpFactor;
     }
 
     // Method to apply a translation matrix for positioning
@@ -193,4 +124,3 @@ public class Scene {
         return dest;
     }
 }
-
