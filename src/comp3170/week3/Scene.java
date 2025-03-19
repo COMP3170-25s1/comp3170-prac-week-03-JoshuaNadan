@@ -71,8 +71,8 @@ public class Scene {
         Matrix4f scaling = new Matrix4f();
 
         // Calculate the current position based on time and radius
-        float x = radius * (float) Math.cos(time);   // Current X position
-        float y = radius * (float) Math.sin(time);   // Current Y position
+        float x = radius * (float) Math.cos(time + 0.1f);   // Current X position
+        float y = radius * (float) Math.sin(time + 0.1f);   // Current Y position
 
         // Set the translation matrix to move the ship in a circular path
         translationMatrix(x, y, translation);

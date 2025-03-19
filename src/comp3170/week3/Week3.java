@@ -44,7 +44,7 @@ public class Week3 implements IWindowListener {
 
         // Update the time and calculate the angle for rotation
         time += 0.01f;  // Adjust this value for different speeds
-        float radius = 0.6f;  // Adjust this for the size of the circular path
+        float radius = 0.5f;  // Adjust this for the size of the circular path
         float scale = 0.2f;   // Adjust the scale of the ship
 
         // Draw the ship in a circular path
